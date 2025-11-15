@@ -113,7 +113,23 @@ class RiskParityPortfolio:
         TODO: Complete Task 2 Below
         """
 
-
+        for i in range(self.lookback + 1, len(df)):
+            # Get the historical returns for the lookback period
+            R_n = df_returns.copy()[assets].iloc[i - self.lookback : i]
+            
+            # Calculate velocity (volatility) for each asset
+            # Velocity is measured as the standard deviation of the asset's returns
+            volatility = R_n.std()
+            
+            # Risk parity: allocate weights inversely proportional to volatility
+            # Assets with lower volatility (velocity) receive higher weights
+            inv_volatility = 1 / volatility
+            
+            # Normalize weights to sum to 1
+            weights = inv_volatility / inv_volatility.sum()
+            
+            # Assign weights to the portfolio
+            self.portfolio_weights.loc[df.index[i], assets] = weights.values
 
         """
         TODO: Complete Task 2 Above
@@ -187,10 +203,22 @@ class MeanVariancePortfolio:
                 TODO: Complete Task 3 Below
                 """
 
-                # Sample Code: Initialize Decision w and the Objective
-                # NOTE: You can modify the following code
-                w = model.addMVar(n, name="w", ub=1)
-                model.setObjective(w.sum(), gp.GRB.MAXIMIZE)
+                # Decision variable: portfolio weights
+                w = model.addMVar(n, name="w", lb=0, ub=1)
+                
+                # Objective: maximize expected return - gamma * variance
+                # Expected return: w^T * mu
+                # Variance: w^T * Sigma * w
+                portfolio_return = mu @ w
+                portfolio_variance = w @ Sigma @ w
+                
+                model.setObjective(
+                    portfolio_return - gamma * portfolio_variance, 
+                    gp.GRB.MAXIMIZE
+                )
+                
+                # Constraint: weights sum to 1
+                model.addConstr(w.sum() == 1, "budget")
 
                 """
                 TODO: Complete Task 3 Above
