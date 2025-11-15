@@ -117,13 +117,15 @@ class RiskParityPortfolio:
             # Get the historical returns for the lookback period
             R_n = df_returns.copy()[assets].iloc[i - self.lookback : i]
             
-            # Calculate volatility (standard deviation) for each asset
+            # Calculate velocity (volatility) for each asset
+            # Velocity is measured as the standard deviation of the asset's returns
             volatility = R_n.std()
             
-            # Calculate inverse volatility
+            # Risk parity: allocate weights inversely proportional to volatility
+            # Assets with lower volatility (velocity) receive higher weights
             inv_volatility = 1 / volatility
             
-            # Normalize to get weights that sum to 1
+            # Normalize weights to sum to 1
             weights = inv_volatility / inv_volatility.sum()
             
             # Assign weights to the portfolio
