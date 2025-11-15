@@ -109,15 +109,14 @@ class RiskParityPortfolio:
         # Calculate the portfolio weights
         self.portfolio_weights = pd.DataFrame(index=df.index, columns=df.columns)
 
-        """
-        TODO: Complete Task 2 Below
-        """
-
-
-
-        """
-        TODO: Complete Task 2 Above
-        """
+        # TODO: Complete Task 2 Below
+        volatilities = df_returns[assets].rolling(window=self.lookback).std()
+        for i in range(self.lookback, len(df)-1):
+            inv_vol = 1 / volatilities.iloc[i]
+            weights = inv_vol / inv_vol.sum()
+            next_date = df.index[i + 1]
+            self.portfolio_weights.loc[next_date, assets] = weights.values
+        # TODO: Complete Task 2 Above
 
         self.portfolio_weights.ffill(inplace=True)
         self.portfolio_weights.fillna(0, inplace=True)
