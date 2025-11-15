@@ -182,18 +182,14 @@ class MeanVariancePortfolio:
             env.setParam("DualReductions", 0)
             env.start()
             with gp.Model(env=env, name="portfolio") as model:
-                """
-                TODO: Complete Task 3 Below
-                """
-
-                # Sample Code: Initialize Decision w and the Objective
-                # NOTE: You can modify the following code
-                w = model.addMVar(n, name="w", ub=1)
-                model.setObjective(w.sum(), gp.GRB.MAXIMIZE)
-
-                """
-                TODO: Complete Task 3 Above
-                """
+                # TODO: Complete Task 3 Below
+                # Initialize Decision w and the Objective
+                w = model.addMVar(n, name="w", lb=0, ub=1)
+                linear_term = mu @ w
+                quadratic_term = 0.5 * gamma * (w @ Sigma @ w)
+                model.setObjective(linear_term - quadratic_term, gp.GRB.MAXIMIZE)
+                model.addConstr(w.sum() == 1, name="budget")
+                # TODO: Complete Task 3 Above
                 model.optimize()
 
                 # Check if the status is INF_OR_UNBD (code 4)
