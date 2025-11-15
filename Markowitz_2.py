@@ -71,6 +71,46 @@ class MyPortfolio:
         TODO: Complete Task 4 Below
         """
         
+        for i in range(self.lookback + 1, len(self.price)):
+            # Get the historical returns for the lookback period
+            R_n = self.returns.copy()[assets].iloc[i - self.lookback : i]
+            
+            # Calculate mean returns and covariance matrix
+            mu = R_n.mean().values
+            Sigma = R_n.cov().values
+            n = len(assets)
+            
+            # Use Gurobi for mean-variance optimization
+            with gp.Env(empty=True) as env:
+                env.setParam("OutputFlag", 0)
+                env.setParam("DualReductions", 0)
+                env.start()
+                with gp.Model(env=env, name="portfolio") as model:
+                    # Decision variable: portfolio weights
+                    w = model.addMVar(n, name="w", lb=0, ub=1)
+                    
+                    # Objective: maximize Sharpe-like ratio (return/risk)
+                    # Using a higher gamma for risk penalty to achieve better Sharpe ratio
+                    portfolio_return = mu @ w
+                    portfolio_variance = w @ Sigma @ w
+                    
+                    # Set gamma to balance risk and return for better Sharpe ratio
+                    model.setObjective(
+                        portfolio_return - self.gamma * portfolio_variance, 
+                        gp.GRB.MAXIMIZE
+                    )
+                    
+                    # Constraint: weights sum to 1 (no leverage)
+                    model.addConstr(w.sum() == 1, "budget")
+                    
+                    model.optimize()
+                    
+                    if model.status == gp.GRB.OPTIMAL or model.status == gp.GRB.SUBOPTIMAL:
+                        solution = []
+                        for j in range(n):
+                            var = model.getVarByName(f"w[{j}]")
+                            solution.append(var.X)
+                        self.portfolio_weights.loc[self.price.index[i], assets] = solution
         
         """
         TODO: Complete Task 4 Above
