@@ -59,13 +59,12 @@ class EqualWeightPortfolio:
         assets = df.columns[df.columns != self.exclude]
         self.portfolio_weights = pd.DataFrame(index=df.index, columns=df.columns)
 
-        """
-        TODO: Complete Task 1 Below
-        """
-
-        """
-        TODO: Complete Task 1 Above
-        """
+        # TODO: Complete Task 1 Below
+        n = len(assets)
+        weight = 1/n
+        for i in range(n):
+            self.portfolio_weights[assets[i]] = weight
+        # TODO: Complete Task 1 Above
         self.portfolio_weights.ffill(inplace=True)
         self.portfolio_weights.fillna(0, inplace=True)
 
