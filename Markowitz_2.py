@@ -70,8 +70,56 @@ class MyPortfolio:
         """
         TODO: Complete Task 4 Below
         """
-        
-        
+        # Lookback and construction settings
+        momentum_lookback = 126          # 126 trading days (~6 months) for momentum
+        min_lookback      = 126          # Minimum data requirement
+        rebalance_period  = 21           # Monthly rebalance
+        top_k             = 5            # Hold top 5 performing sectors
+
+        for i in range(len(self.price)):
+            # 1. Check data length
+            if i < min_lookback:
+                continue
+
+            # 2. Only execute on rebalance days
+            if i % rebalance_period != 0:
+                continue
+
+            current_date = self.price.index[i]
+
+            # 3. Synchronize the calculation window for Return and Volatility
+            window = self.returns.iloc[i - momentum_lookback + 1 : i + 1][assets]
+            
+            # Calculate cumulative return (Momentum)
+            momentum = (1 + window).cumprod().iloc[-1] - 1
+            
+            # Calculate volatility
+            volatility = window.std()
+
+            # 4. Absolute Momentum filter, exclude assets with negative returns
+            valid_assets = momentum[momentum > 0].index
+
+            if len(valid_assets) == 0:
+                self.portfolio_weights.loc[current_date] = 0.0
+                continue
+
+            # 5. Second layer stock selection: Risk-Adjusted Return (Sharpe)
+            scores = momentum[valid_assets] / volatility[valid_assets]
+            
+            # Select the top_k with the highest CP value
+            selected_assets = scores.sort_values(ascending=False).head(top_k).index
+
+            # 6. Weight allocation: Inverse Volatility, allocate more weight to safer assets
+            recent_vol = volatility[selected_assets]
+            inv_vol = 1.0 / (recent_vol + 1e-8)
+            weights = inv_vol / inv_vol.sum()
+
+            # Fill in weights
+            row = pd.Series(0.0, index=self.price.columns)
+            for asset in selected_assets:
+                row[asset] = weights[asset]
+
+            self.portfolio_weights.loc[current_date] = row
         """
         TODO: Complete Task 4 Above
         """
